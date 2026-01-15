@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메인 페이지</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 메인 페이지 전용 간단 스타일 */
+        .main-container {
+            text-align: center;
+            background: white;
+            padding: 50px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 { color: #007bff; margin-bottom: 10px; }
+        p { color: #555; font-size: 18px; }
+        .logout-btn {
+            background-color: #ff4757; /* 빨간색 버튼 */
+            margin-top: 30px;
+        }
+        .logout-btn:hover { background-color: #e84118; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <h1>🎉 환영합니다!</h1>
+        <p><span id="username" style="font-weight:bold;"></span> 지휘관님, 접속을 환영합니다.</p>
+        <p>여기는 로그인한 회원만 볼 수 있는 메인 페이지입니다.</p>
+        
+        <button class="logout-btn" onclick="logout()">로그아웃</button>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        // 페이지가 열리자마자 실행되는 코드
+        // 로그인 안 한 사람이 몰래 주소 치고 들어오면 쫓아냄!
+        const currentUser = localStorage.getItem('loginUser');
+        if (!currentUser) {
+            alert('로그인이 필요한 페이지입니다!');
+            location.href = 'index.html';
+        } else {
+            // 로그인했다면 이름을 화면에 보여줌
+            document.getElementById('username').innerText = currentUser;
+        }
+    </script>
+</body>
+</html>
