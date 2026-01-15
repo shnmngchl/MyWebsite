@@ -1,4 +1,6 @@
-// 1. 파이어베이스 연결 설정 (여기에 아까 그 키를 넣어야 합니다!)
+// -----------------------------------------------------------
+// 1. 파이어베이스 설정 (여기에 지휘관님의 진짜 키를 넣어주세요!)
+// -----------------------------------------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyCVVP6ensnpr3h0uUtpwqcdBsNfc56KgWA",
   authDomain: "site-ddd9d.firebaseapp.com",
@@ -7,14 +9,20 @@ const firebaseConfig = {
   messagingSenderId: "1057082364957",
   appId: "1:1057082364957:web:807cacc7536e7f9bf0a2f4"
 };
-// 2. 파이어베이스 시작
+
+// 파이어베이스 시작
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// 3. 회원가입 기능 (서버로 보냄)
+
+// -----------------------------------------------------------
+// 2. 버튼 기능들 (로그인, 가입, 로그아웃, 글쓰기)
+// -----------------------------------------------------------
+
+// 회원가입
 function signup() {
-    const email = document.getElementById('new-id').value; // 아이디를 이메일처럼 씀
+    const email = document.getElementById('new-id').value;
     const password = document.getElementById('new-pw').value;
 
     if (password.length < 6) {
@@ -22,9 +30,8 @@ function signup() {
         return;
     }
 
-    // 서버에 계정 생성 요청
     auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
+        .then(() => {
             alert("가입 성공! 환영합니다.");
             window.location.href = 'index.html';
         })
@@ -33,98 +40,91 @@ function signup() {
         });
 }
 
-// 4. 로그인 기능 (서버에서 확인)
+// 로그인
 function login() {
     const email = document.getElementById('userid').value;
     const password = document.getElementById('userpw').value;
 
     auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
+        .then(() => {
             alert("로그인 성공!");
             window.location.href = 'main.html';
         })
         .catch((error) => {
-            alert("로그인 실패.. 아이디나 비번을 확인하세요.");
+            alert("로그인 실패.. 아이디/비번을 확인하세요.");
         });
 }
 
-// 5. 로그아웃 기능
+// 로그아웃
 function logout() {
     auth.signOut().then(() => {
-        alert("로그아웃 되었습니다.");
+        // alert("로그아웃 되었습니다."); // 귀찮은 팝업 삭제!
         window.location.href = 'index.html';
     });
 }
-// -------------------------------------------
-// 🚀 여기서부터 방명록 기능입니다!
-// -------------------------------------------
 
-// 1. 방명록 쓰기 기능
+// 방명록 쓰기
 function writeGuestbook() {
     const msgInput = document.getElementById('guest-msg');
     const msg = msgInput.value;
-    const user = firebase.auth().currentUser; // 현재 로그인한 사람 정보
+    const user = auth.currentUser;
 
     if (!user) {
         alert("로그인해야 쓸 수 있습니다!");
         return;
     }
     if (msg.length < 2) {
-        alert("너무 짧아요! 2글자 이상 써주세요.");
+        alert("내용을 더 써주세요!");
         return;
     }
 
-    // 서버(Firestore)에 데이터 저장!
     db.collection("guestbook").add({
-        name: user.email,     // 누가 썼는지
-        message: msg,         // 무슨 내용인지
-        date: new Date()      // 언제 썼는지
+        name: user.email,
+        message: msg,
+        date: new Date()
     })
     .then(() => {
-        alert("방명록이 등록되었습니다!");
-        msgInput.value = ""; // 입력창 비우기
+        alert("등록 완료!");
+        msgInput.value = "";
     })
     .catch((error) => {
-        console.error("Error adding document: ", error);
-        alert("오류가 났어요 ㅠㅠ");
+        alert("오류: " + error.message);
     });
 }
 
-// 2. 방명록 실시간으로 불러오기 (마법의 기능 ✨)
-// 페이지가 열리면 서버를 계속 감시합니다.
-// 2. 방명록 실시간으로 불러오기 (마법의 기능 ✨)
+
+// -----------------------------------------------------------
+// 3. 페이지 관리자 (여기가 팝업 범인을 잡는 곳!)
+// -----------------------------------------------------------
 window.onload = function() {
-    // 🚨 [중요 수정] 문지기에게 "여기가 메인 페이지인지" 확인시킵니다.
-    // 메인 페이지에만 있는 'guestbook-list'가 없으면, 검사 안 하고 퇴근합니다.
-    if (!document.getElementById('guestbook-list')) {
+    // 🔍 지금 내가 있는 곳이 메인 페이지(main.html)인지 확인
+    const isMainPage = document.getElementById('guestbook-list');
+
+    // 🚨 메인 페이지가 아니면(로그인 화면이면) 아무것도 하지 마! (팝업 금지)
+    if (!isMainPage) {
         return; 
     }
 
-    firebase.auth().onAuthStateChanged((user) => {
+    // 메인 페이지일 때만 감시 시작
+    auth.onAuthStateChanged((user) => {
         if (user) {
-            // 로그인 상태면: 환영 메시지 띄우고 방명록 보여줌
+            // 로그인 된 상태 -> 방명록 보여주기
             document.getElementById('username').innerText = user.email;
             
-            // 방명록 데이터 가져오기
             db.collection("guestbook").orderBy("date", "desc").onSnapshot((snapshot) => {
                 const list = document.getElementById('guestbook-list');
-                list.innerHTML = ""; 
-
+                list.innerHTML = "";
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    const html = `
+                    list.innerHTML += `
                         <div class="card mb-2 p-2 shadow-sm">
                             <small class="text-primary fw-bold">${data.name}</small>
                             <span class="fs-5">${data.message}</span>
-                        </div>
-                    `;
-                    list.innerHTML += html;
+                        </div>`;
                 });
             });
-
         } else {
-            // 로그아웃 상태면: 조용히 로그인 화면으로 보냄 (팝업 삭제!)
-            // alert("로그인이 필요합니다.");  <-- 이 시끄러운 녀석을 지웠습니다.
+            // 로그인 안 된 상태 -> 조용히 로그인 화면으로 보냄
             location.href = 'index.html';
         }
     });
