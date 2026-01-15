@@ -92,20 +92,26 @@ function writeGuestbook() {
 
 // 2. 방명록 실시간으로 불러오기 (마법의 기능 ✨)
 // 페이지가 열리면 서버를 계속 감시합니다.
+// 2. 방명록 실시간으로 불러오기 (마법의 기능 ✨)
 window.onload = function() {
-    // 만약 로그인 안 했으면 로그인 창으로 쫓아냄
+    // 🚨 [중요 수정] 문지기에게 "여기가 메인 페이지인지" 확인시킵니다.
+    // 메인 페이지에만 있는 'guestbook-list'가 없으면, 검사 안 하고 퇴근합니다.
+    if (!document.getElementById('guestbook-list')) {
+        return; 
+    }
+
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
+            // 로그인 상태면: 환영 메시지 띄우고 방명록 보여줌
             document.getElementById('username').innerText = user.email;
             
-            // 여기서부터 데이터를 실시간으로 가져옵니다
+            // 방명록 데이터 가져오기
             db.collection("guestbook").orderBy("date", "desc").onSnapshot((snapshot) => {
                 const list = document.getElementById('guestbook-list');
-                list.innerHTML = ""; // 기존 목록 싹 비우고 다시 그림
+                list.innerHTML = ""; 
 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    // HTML 덩어리를 만들어서 끼워넣기
                     const html = `
                         <div class="card mb-2 p-2 shadow-sm">
                             <small class="text-primary fw-bold">${data.name}</small>
@@ -117,7 +123,8 @@ window.onload = function() {
             });
 
         } else {
-            alert("로그인이 필요합니다.");
+            // 로그아웃 상태면: 조용히 로그인 화면으로 보냄 (팝업 삭제!)
+            // alert("로그인이 필요합니다.");  <-- 이 시끄러운 녀석을 지웠습니다.
             location.href = 'index.html';
         }
     });
